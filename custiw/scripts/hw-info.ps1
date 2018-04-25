@@ -86,8 +86,14 @@ function Get-HW-Vendor {
 }
 
 function Get-HW-Serial {
-    $output = Get-WmiObject Win32_BIOS -Property SerialNumber |
-    	      Select-Object -ExpandProperty SerialNumber
+    if ( Get-HW-Vendor -imatch '(Supermicro)' ) {
+        $output = Get-WmiObject Win32_BaseBoard -Property SerialNumber |
+                  Select-Object -ExpandProperty SerialNumber
+
+    } else {
+        $output = Get-WmiObject Win32_BIOS -Property SerialNumber |
+    	          Select-Object -ExpandProperty SerialNumber
+    }
     if ( $output ) {
        Write-Host $output
     } else {
@@ -95,9 +101,14 @@ function Get-HW-Serial {
     }
 }
 
-function Get-HW-Model {
-    Get-WmiObject Win32_ComputerSystem -Property Model |
-    Select-Object -ExpandProperty Model
+function Get-HW-Model { 
+    if ( Get-HW-Vendor -imatch '(Supermicro)' ) {
+        Get-WmiObject Win32_BaseBoard -Property Product |
+        Select-Object -ExpandProperty Product
+    } else {
+        Get-WmiObject Win32_ComputerSystem -Property Model |
+        Select-Object -ExpandProperty Model
+    }
 }
 
 function Get-HW-Chassis {
@@ -122,10 +133,14 @@ function Get-HW-Full {
     $winbios_attrs = @('SerialNumber')
     $winbios_rdata = Get-WmiObject Win32_BIOS -Property ($winbios_attrs) |
     		     Select-Object -Property ($winbios_attrs)
-
     $csystem_attrs = @('Manufacturer', 'Model', 'SystemType', 'TotalPhysicalMemory')
     $csystem_rdata = Get-WmiObject Win32_ComputerSystem -Property ($csystem_attrs) |
-    		     Select-Object -Property ($csystem_attrs)
+           	     Select-Object -Property ($csystem_attrs)
+    if ( $csystem_rdata.Manufacturer -imatch '(Supermicro)' ) {
+        $data = Get-WmiObject Win32_BaseBoard -Property Product,SerialNumber
+        $csystem_rdata.Model = $data.Product
+        $winbios_rdata.SerialNumber = $data.SerialNumber
+    }
 
     $devices_attrs = @('Name', 'Size', 'SerialNumber', 'Model', 'InterfaceType')
     $devices_rdata = Get-WmiObject Win32_DiskDrive -Property ($devices_attrs) |
@@ -133,7 +148,7 @@ function Get-HW-Full {
 
     $json_raw = [ordered]@{
         blockdevices = @()
-        chassis = "{0} {1} {2}" -f $csystem_rdata.Manufacturer, $csystem_rdata.Model, $csystem_rdata.SystemType
+        chassis = "{0} {1} {2} {3}" -f $csystem_rdata.Manufacturer, $csystem_rdata.Model, $winbios_rdata.SerialNumber, $csystem_rdata.SystemType
         cpu_arch = $osystem_rdata.OSArchitecture
         cpu_cores_per_socket = $wiprocs_rdata.NumberOfCores |
 			       Sort -Unique |

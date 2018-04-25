@@ -9,9 +9,9 @@ function Get-HW-Type {
     $output = Get-WmiObject Win32_ComputerSystem -Property Manufacturer |
     	      Select-Object -Property Manufacturer
     if ( $output -imatch "(qemu.*|vmware.*|virtual.*|xen.*|KVM.*)" ) {
-        Write-Host "Virtual"
+        Write-Host "virtual"
     } else {
-        Write-Host "Physical"
+        Write-Host "physical"
     }
 }
 

@@ -114,7 +114,16 @@ function Get-HW-Model {
 function Get-HW-Chassis {
     $output = Get-WmiObject Win32_ComputerSystem -Property  Manufacturer,Model,SystemType |
     	      Select-Object -Property Manufacturer,Model,SystemType
-    Write-Host $output.Manufacturer $output.Model $output.SystemType
+    $output.SerialNumber = Get-WmiObject Win32_BIOS -Property SerialNumber |
+    	          	   Select-Object -ExpandProperty SerialNumber
+
+    if ( $output.Manufacturer -imatch '(Supermicro)' ) {
+        $data = Get-WmiObject Win32_BaseBoard -Property Product,SerialNumber
+        $output.Model = $data.Product
+        $output.SerialNumber = $data.SerialNumber
+    }
+
+    Write-Host $output.Manufacturer, $output.Model, $output.SerialNumber, $output.SystemType
 }
 
 function Get-HW-Full {

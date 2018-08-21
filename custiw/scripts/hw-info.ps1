@@ -184,6 +184,7 @@ function Get-HW-Full {
         memory_swap = ($osystem_rdata.TotalVirtualMemorySize*1024)
         model = $csystem_rdata.Model
         serial = ''
+	site = "$Env:CO_SITE"
         sku = $mssysin_attrs.SystemSKU
         type = ''
         vendor = $csystem_rdata.Manufacturer

@@ -24,6 +24,7 @@ function Get-OS-Full {
         boottime = $win32os_rdata.LastBootUpTime
         productid = $win32os_rdata.SerialNumber
         installed = $win32os_rdata.InstallDate
+	env = "$Env:CO_ENV"
     }
     $json_raw | ConvertTo-Json
 }
